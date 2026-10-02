@@ -1,58 +1,62 @@
-import sqlite3
+from app import app, db, Dono, Pet
 
-BANCO = "petshop.db"
 
-conexao = sqlite3.connect(BANCO)
-cursor = conexao.cursor()
+with app.app_context():
 
-# Apaga as tabelas antigas para o script poder ser rodado de novo
-cursor.execute("DROP TABLE IF EXISTS pets")
-cursor.execute("DROP TABLE IF EXISTS donos")
+    # Cria as tabelas caso ainda não existam
+    db.create_all()
 
-cursor.execute("""
-CREATE TABLE donos (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nome TEXT NOT NULL,
-    telefone TEXT NOT NULL
-)
-""")
+    # Só adiciona os dados de exemplo se o banco estiver vazio
+    if Dono.query.first() is None:
 
-cursor.execute("""
-CREATE TABLE pets (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    nome TEXT NOT NULL,
-    especie TEXT NOT NULL,
-    idade INTEGER NOT NULL,
-    dono_id INTEGER NOT NULL,
-    FOREIGN KEY (dono_id) REFERENCES donos (id)
-)
-""")
+        # ==========================
+        # DONOS
+        # ==========================
 
-donos = [
-    ("Ana Paula Ribeiro", "45999110001"),
-    ("Bruno Cardoso", "45999110002"),
-    ("Carla Meneghel", "45999110003")
-]
+        ana = Dono(
+            nome="Ana Paula Ribeiro",
+            telefone="45999110001"
+        )
 
-for dono in donos:
-    cursor.execute("INSERT INTO donos (nome, telefone) VALUES (?, ?)", dono)
+        bruno = Dono(
+            nome="Bruno Martins",
+            telefone="45999110002"
+        )
 
-pets = [
-    ("Rex", "cachorro", 4, 1),
-    ("Mimi", "gato", 2, 1),
-    ("Thor", "cachorro", 7, 2),
-    ("Nina", "gato", 1, 3),
-    ("Pingo", "passaro", 3, 3)
-]
+        db.session.add(ana)
+        db.session.add(bruno)
 
-for pet in pets:
-    cursor.execute(
-        "INSERT INTO pets (nome, especie, idade, dono_id) VALUES (?, ?, ?, ?)",
-        pet
-    )
+        db.session.commit()
 
-conexao.commit()
-conexao.close()
+        # ==========================
+        # PETS
+        # ==========================
 
-print("Banco criado com sucesso.")
-print(f"Foram inseridos {len(donos)} donos e {len(pets)} pets.")
+        rex = Pet(
+            nome="Rex",
+            especie="cachorro",
+            idade=4,
+            dono_id=ana.id
+        )
+
+        mimi = Pet(
+            nome="Mimi",
+            especie="gato",
+            idade=2,
+            dono_id=ana.id
+        )
+
+        thor = Pet(
+            nome="Thor",
+            especie="cachorro",
+            idade=7,
+            dono_id=bruno.id
+        )
+
+        db.session.add(rex)
+        db.session.add(mimi)
+        db.session.add(thor)
+
+        db.session.commit()
+
+        print("Banco criado com sucesso.")
